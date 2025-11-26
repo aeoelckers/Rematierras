@@ -1,5 +1,6 @@
-// Rematierras - app.js
-// MVP: carga un JSON local y permite filtrar remates.
+// Rematierras - app.js (versión Boletín Concursal)
+// En vez de leer data/remates.json, cargamos directamente desde
+// https://www.boletinconcursal.cl/boletin/procedimientos
 
 let remates = [];
 let rematesFiltrados = [];
@@ -18,31 +19,102 @@ const elements = {
   lastUpdate: document.getElementById("last-update"),
 };
 
-// Cargar datos desde data/remates.json
+// ===================== CARGA DE DATOS ======================
+
+// Versión que carga directamente desde Boletín Concursal
+async function cargarDesdeBoletinConcursal() {
+  const url = "https://www.boletinconcursal.cl/boletin/procedimientos";
+
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`HTTP ${res.status} al consultar boletinconcursal`);
+
+  const html = await res.text();
+
+  // Parsear el HTML que llega
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  // ⚠️ IMPORTANTE:
+  // Acá es donde hay que ajustar los selectores según la estructura real
+  // de https://www.boletinconcursal.cl/boletin/procedimientos.
+  //
+  // Yo asumo que hay una tabla con filas <tr> que representan procedimientos.
+  // Cambia 'table tbody tr' y los índices de celdas por lo que ya usaste en tu
+  // proyecto rema-t (puedes copiar esos mismos selectores/celdas).
+
+  const filas = doc.querySelectorAll("table tbody tr");
+  const data = [];
+
+  filas.forEach((tr, idx) => {
+    const celdas = tr.querySelectorAll("td");
+    if (celdas.length === 0) return;
+
+    // EJEMPLO genérico: ajusta según la tabla real
+    const tribunal = celdas[0]?.textContent.trim() || "";
+    const rol = celdas[1]?.textContent.trim() || "";
+    const deudor = celdas[2]?.textContent.trim() || "";
+    const ciudad = celdas[3]?.textContent.trim() || "";
+    const fechaTexto = celdas[4]?.textContent.trim() || "";
+
+    // Fecha en formato "YYYY-MM-DD" si es posible
+    let fechaISO = null;
+    if (fechaTexto) {
+      const partes = fechaTexto.split("-").map((p) => p.trim());
+      if (partes.length === 3) {
+        // asumo formato DD-MM-YYYY -> ajusta si es distinto
+        const [dd, mm, yyyy] = partes;
+        fechaISO = `${yyyy}-${mm}-${dd}`;
+      }
+    }
+
+    // Link al detalle (si existe un <a> en alguna celda)
+    const linkEl = tr.querySelector("a");
+    const link =
+      linkEl && linkEl.href ? linkEl.href : "https://www.boletinconcursal.cl/boletin/procedimientos";
+
+    // Adaptamos al formato interno de Rematierras
+    data.push({
+      id: `boletin-${idx + 1}`,
+      tipo_remate: "Boletín concursal",
+      tipo_inmueble: "Procedimiento concursal", // por ahora usamos este texto
+      region: "", // si de la tabla puedes distinguir región, ponla acá
+      comuna: ciudad || "",
+      fecha_remate: fechaISO, // se usa para los filtros de fecha
+      precio_minimo: null,
+      moneda: "",
+      source: "boletin_concursal",
+      source_url: link,
+      // Campos extra que no usamos aún pero podrían servir
+      tribunal,
+      rol,
+      deudor,
+    });
+  });
+
+  return data;
+}
+
+// Cargar datos (para ahora usamos SIEMPRE boletin concursal)
 async function cargarDatos() {
   try {
-    const res = await fetch("data/remates.json");
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    remates = Array.isArray(data) ? data : [];
+    remates = await cargarDesdeBoletinConcursal();
     rematesFiltrados = remates.slice();
 
     poblarFiltros();
     renderizarResultados();
 
     elements.lastUpdate.textContent =
-      "Datos de ejemplo cargados desde data/remates.json. Cuando tengamos scraper, se reemplaza por datos reales.";
+      "Datos cargados en vivo desde boletinconcursal.cl (procedimientos concursales).";
   } catch (err) {
     console.error("Error cargando datos:", err);
     elements.error.style.display = "block";
     elements.error.textContent =
-      "No se pudo cargar data/remates.json. Revisa la ruta, el archivo y GitHub Pages (HTTPS).";
+      "No se pudo cargar la información desde Boletín Concursal. Revisa la consola del navegador o CORS.";
   }
 }
 
-// Llena los select únicos a partir de la data
+// ===================== FILTROS & RENDER ======================
+
 function poblarFiltros() {
   const tiposRemate = new Set();
   const tiposInmueble = new Set();
@@ -54,15 +126,14 @@ function poblarFiltros() {
     if (r.region) regiones.add(r.region);
   });
 
-  llenarSelect(elements.tipoRemate, tiposRemate);
-  llenarSelect(elements.tipoInmueble, tiposInmueble);
-  llenarSelect(elements.region, regiones);
+  llenarSelect(elements.tipoRemate, tiposRemate, "Todos");
+  llenarSelect(elements.tipoInmueble, tiposInmueble, "Todos");
+  llenarSelect(elements.region, regiones, "Todas");
 }
 
-// Helper para llenar un select
-function llenarSelect(selectEl, valuesSet) {
+function llenarSelect(selectEl, valuesSet, defaultLabel) {
   const currentValue = selectEl.value;
-  selectEl.innerHTML = "<option value=''>Todos</option>";
+  selectEl.innerHTML = `<option value="">${defaultLabel}</option>`;
   Array.from(valuesSet)
     .sort((a, b) => a.localeCompare(b, "es"))
     .forEach((val) => {
@@ -76,7 +147,6 @@ function llenarSelect(selectEl, valuesSet) {
   }
 }
 
-// Aplica filtros sobre la lista original de remates
 function aplicarFiltros() {
   const tipoRemate = elements.tipoRemate.value;
   const tipoInmueble = elements.tipoInmueble.value;
@@ -113,21 +183,20 @@ function aplicarFiltros() {
   renderizarResultados();
 }
 
-// Renderiza tarjetas de resultados
 function renderizarResultados() {
   elements.results.innerHTML = "";
 
   if (!rematesFiltrados.length) {
     elements.results.innerHTML =
-      '<div class="empty-state">No se encontraron remates con los filtros actuales. Prueba ampliando fechas, región o tipo de remate.</div>';
-    elements.resultCount.textContent = "0 remates";
+      '<div class="empty-state">No se encontraron procedimientos con los filtros actuales.</div>';
+    elements.resultCount.textContent = "0 resultados";
     return;
   }
 
   elements.resultCount.textContent =
     rematesFiltrados.length === 1
-      ? "1 remate encontrado"
-      : `${rematesFiltrados.length} remates encontrados`;
+      ? "1 resultado encontrado"
+      : `${rematesFiltrados.length} resultados encontrados`;
 
   rematesFiltrados.forEach((r) => {
     const card = document.createElement("article");
@@ -137,9 +206,9 @@ function renderizarResultados() {
     titulo.className = "result-title";
 
     const tituloTexto = document.createElement("span");
-    const tipoRemate = r.tipo_remate || "Remate";
-    const tipoInmueble = r.tipo_inmueble || "Inmueble";
-    const comuna = r.comuna || "Sin comuna";
+    const tipoRemate = r.tipo_remate || "Procedimiento";
+    const tipoInmueble = r.tipo_inmueble || "Concursal";
+    const comuna = r.comuna || "Sin ciudad";
     tituloTexto.textContent = `${tipoRemate} – ${tipoInmueble} – ${comuna}`;
 
     const badge = document.createElement("span");
@@ -156,23 +225,21 @@ function renderizarResultados() {
     fechaSpan.textContent = `📅 ${formatoFecha(r.fecha_remate)}`;
 
     const regionSpan = document.createElement("span");
-    regionSpan.textContent = `📍 ${(r.region || "Sin región") + (r.comuna ? `, ${r.comuna}` : "")}`;
+    regionSpan.textContent = `📍 ${r.comuna || "Sin ciudad"}`;
 
-    const precioSpan = document.createElement("span");
-    const precio = r.precio_minimo != null ? r.precio_minimo : "S/I";
-    const moneda = r.moneda || "";
-    precioSpan.textContent = `💰 Base: ${precio} ${moneda}`.trim();
+    const extraSpan = document.createElement("span");
+    extraSpan.textContent = `⚖️ ${r.tribunal || ""} ${r.rol ? `(${r.rol})` : ""}`.trim();
 
     meta.appendChild(fechaSpan);
     meta.appendChild(regionSpan);
-    meta.appendChild(precioSpan);
+    meta.appendChild(extraSpan);
 
     const actions = document.createElement("div");
     actions.className = "result-actions";
 
     const leftInfo = document.createElement("div");
     leftInfo.className = "tiny-text";
-    leftInfo.textContent = r.id ? `ID interno: ${r.id}` : "ID sin definir";
+    leftInfo.textContent = r.deudor ? `Deudor: ${r.deudor}` : `ID interno: ${r.id}`;
 
     const rightActions = document.createElement("div");
     rightActions.style.display = "flex";
@@ -184,13 +251,13 @@ function renderizarResultados() {
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.className = "btn-link";
-      link.textContent = "Ver aviso";
+      link.textContent = "Ver procedimiento";
       rightActions.appendChild(link);
     }
 
     const pill = document.createElement("span");
     pill.className = "pill-small";
-    pill.textContent = r.tipo_remate || "Tipo desconocido";
+    pill.textContent = "Boletín concursal";
 
     rightActions.appendChild(pill);
 
@@ -205,7 +272,6 @@ function renderizarResultados() {
   });
 }
 
-// Formatea fechas tipo YYYY-MM-DD a algo legible
 function formatoFecha(str) {
   if (!str) return "Fecha sin definir";
   const d = new Date(str);
