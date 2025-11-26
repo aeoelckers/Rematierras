@@ -1,0 +1,38 @@
+[
+  {
+    "id": "dicrep-001",
+    "tipo_remate": "Dicrep",
+    "tipo_inmueble": "Terreno urbano",
+    "region": "Región Metropolitana",
+    "comuna": "San Bernardo",
+    "fecha_remate": "2025-12-15",
+    "precio_minimo": 1500,
+    "moneda": "UF",
+    "source": "dicrep",
+    "source_url": "https://www.ejemplo.cl/remate/dicrep-001"
+  },
+  {
+    "id": "tgr-001",
+    "tipo_remate": "Fiscal TGR",
+    "tipo_inmueble": "Sitio eriazo",
+    "region": "Región de Valparaíso",
+    "comuna": "Quillota",
+    "fecha_remate": "2025-12-20",
+    "precio_minimo": 900,
+    "moneda": "UF",
+    "source": "tgr",
+    "source_url": "https://www.ejemplo.cl/remate/tgr-001"
+  },
+  {
+    "id": "bienes-001",
+    "tipo_remate": "Bienes Nacionales",
+    "tipo_inmueble": "Parcela agrícola",
+    "region": "Región de O'Higgins",
+    "comuna": "Rengo",
+    "fecha_remate": "2026-01-10",
+    "precio_minimo": null,
+    "moneda": "",
+    "source": "bienes_nacionales",
+    "source_url": "https://www.ejemplo.cl/remate/bienes-001"
+  }
+]
