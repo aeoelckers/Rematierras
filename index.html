@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rematierras – Metabuscador de remates de terrenos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="Rematierras – Metabuscador simple de remates de terrenos, lotes y campos en Chile."
+  />
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-card: #020617;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --danger: #f97373;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1f2937 0, #020617 50%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 3rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    header {
+      margin-bottom: 1.5rem;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: conic-gradient(from 160deg, #22c55e, #84cc16, #22c55e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #020617;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin-top: 0.4rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.8rem;
+    }
+
+    .pill {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 2.5fr);
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(3, 7, 18, 0.98));
+      border: 1px solid var(--border);
+      padding: 1rem 1.1rem;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(10px);
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .card-title span {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 400;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+
+    @media (max-width: 600px) {
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+      display: block;
+    }
+
+    select,
+    input[type="text"],
+    input[type="date"] {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--text);
+      font-size: 0.82rem;
+      outline: none;
+      transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+      background: #020617;
+    }
+
+    .filters-row-bottom {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      margin-top: 0.8rem;
+      justify-content: space-between;
+    }
+
+    .btn-primary {
+      border-radius: 999px;
+      padding: 0.45rem 1.1rem;
+      border: none;
+      background: linear-gradient(135deg, #22c55e, #4ade80);
+      color: #052e16;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s;
+      box-shadow: 0 8px 18px rgba(22, 163, 74, 0.45);
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow: 0 10px 22px rgba(22, 163, 74, 0.55);
+    }
+
+    .btn-primary span {
+      font-size: 1rem;
+    }
+
+    .tiny-text {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.6rem;
+    }
+
+    .results-header h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .results-header span {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .results-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 0.2rem;
+    }
+
+    .result-card {
+      border-radius: calc(var(--radius) - 4px);
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), rgba(15, 23, 42, 0.95));
+      padding: 0.7rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .result-title {
+      font-size: 0.86rem;
+      font-weight: 600;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .badge.green {
+      border-color: rgba(34, 197, 94, 0.7);
+      background: var(--accent-soft);
+      color: #bbf7d0;
+    }
+
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .result-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .result-actions {
+      margin-top: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .btn-link {
+      border-radius: 999px;
+      padding: 0.3rem 0.75rem;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      text-decoration: none;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .btn-link:hover {
+      background: var(--accent-soft);
+      border-color: #4ade80;
+      color: #bbf7d0;
+    }
+
+    .pill-small {
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 1.2rem 0.4rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .error {
+      color: var(--danger);
+      font-size: 0.78rem;
+      margin-top: 0.4rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-badge">R</div>
+        <span>Rematierras</span>
+      </div>
+      <p class="subtitle">
+        Metabuscador de remates de <strong>terrenos, lotes y campos</strong> en Chile. Un solo lugar para no perder ninguna oportunidad.
+      </p>
+      <div class="pill-row">
+        <span class="pill">Dicrep</span>
+        <span class="pill">Tesorería General (TGR)</span>
+        <span class="pill">Bienes Nacionales</span>
+        <span class="pill">Judiciales</span>
+        <span class="pill">Fiscales</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="card" id="filters-card">
+        <div class="card-title">
+          <span>Filtros</span>
+          <span>Primero carga el JSON local y luego afinamos la data real.</span>
+        </div>
+
+        <div class="filters-grid">
+          <div>
+            <label for="tipo-remate">Tipo de remate</label>
+            <select id="tipo-remate">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="tipo-inmueble">Tipo de inmueble</label>
+            <select id="tipo-inmueble">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="region">Región</label>
+            <select id="region">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="comuna">Comuna</label>
+            <input type="text" id="comuna" placeholder="Ej: San Bernardo" />
+          </div>
+
+          <div>
+            <label for="fecha-desde">Fecha remate desde</label>
+            <input type="date" id="fecha-desde" />
+          </div>
+
+          <div>
+            <label for="fecha-hasta">Fecha remate hasta</label>
+            <input type="date" id="fecha-hasta" />
+          </div>
+        </div>
+
+        <div class="filters-row-bottom">
+          <button class="btn-primary" id="btn-aplicar">
+            <span>🔍</span> Aplicar filtros
+          </button>
+          <span class="tiny-text" id="last-update">
+            Datos de ejemplo cargados desde <code>data/remates.json</code>.
+          </span>
+        </div>
+
+        <div id="error" class="error" style="display:none;"></div>
+      </section>
+
+      <section class="card">
+        <div class="results-header">
+          <h2>Resultados</h2>
+          <span id="result-count">0 remates</span>
+        </div>
+
+        <div class="results-list" id="results"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
