@@ -1,6 +1,4 @@
-let remates = [];
-let rematesFiltrados = [];
-
+// --- Referencias a elementos del DOM --- //
 const els = {
   tipoRemate: document.getElementById("tipo-remate"),
   region: document.getElementById("region"),
@@ -14,13 +12,28 @@ const els = {
   lastUpdate: document.getElementById("last-update"),
 };
 
+let remates = [];
+let rematesFiltrados = [];
+
+// --- Cargar datos desde data/remates.json --- //
 async function cargarDatos() {
   try {
     const res = await fetch("data/remates.json");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const payload = await res.json();
 
-    remates = Array.isArray(payload) ? payload : (payload.records || []);
+    // Soportar dos formatos:
+    // - array simple
+    // - objeto { records: [...] }
+    if (Array.isArray(payload)) {
+      remates = payload;
+    } else if (Array.isArray(payload.records)) {
+      remates = payload.records;
+    } else {
+      remates = [];
+    }
+
     rematesFiltrados = [...remates];
 
     poblarFiltros();
@@ -34,11 +47,12 @@ async function cargarDatos() {
     if (els.error) {
       els.error.style.display = "block";
       els.error.textContent =
-        "No se pudo cargar data/remates.json. Revisa que exista en la carpeta data/.";
+        "No se pudo cargar data/remates.json. Verifica que exista y tenga formato correcto.";
     }
   }
 }
 
+// --- Poblar selects de tipo, región, comuna --- //
 function poblarFiltros() {
   const tipos = new Set();
   const regiones = new Set();
@@ -57,8 +71,9 @@ function poblarFiltros() {
     optAll.value = "";
     optAll.textContent = labelTodos;
     select.appendChild(optAll);
+
     Array.from(values)
-      .sort()
+      .sort((a, b) => a.localeCompare(b, "es-CL"))
       .forEach((v) => {
         const opt = document.createElement("option");
         opt.value = v;
@@ -72,11 +87,12 @@ function poblarFiltros() {
   fillSelect(els.comuna, comunas, "Todas las comunas");
 }
 
+// --- Aplicar filtros --- //
 function aplicarFiltros() {
   const tipo = els.tipoRemate?.value || "";
   const region = els.region?.value || "";
   const comuna = els.comuna?.value || "";
-  const desde = els.fechaDesde?.value || "";
+  const desde = els.fechaDesde?.value || ""; // formato YYYY-MM-DD
   const hasta = els.fechaHasta?.value || "";
 
   rematesFiltrados = remates.filter((r) => {
@@ -84,20 +100,20 @@ function aplicarFiltros() {
     if (region && r.region !== region) return false;
     if (comuna && r.comuna !== comuna) return false;
 
+    // fecha_remate (ISO) o fecha_publicacion (YYYY-MM-DD)
     let fechaBase = r.fecha_remate || r.fecha_publicacion;
+    if (!fechaBase) return true;
+
+    // Normalizamos a string ISO comparable
     if (typeof fechaBase === "string") {
-      // fecha_publicacion viene como YYYY-MM-DD, fecha_remate como ISO
       if (fechaBase.length === 10) {
+        // YYYY-MM-DD
         fechaBase = `${fechaBase}T00:00:00`;
       }
     }
 
-    if (desde && fechaBase) {
-      if (fechaBase < `${desde}T00:00:00`) return false;
-    }
-    if (hasta && fechaBase) {
-      if (fechaBase > `${hasta}T23:59:59`) return false;
-    }
+    if (desde && fechaBase < `${desde}T00:00:00`) return false;
+    if (hasta && fechaBase > `${hasta}T23:59:59`) return false;
 
     return true;
   });
@@ -105,41 +121,62 @@ function aplicarFiltros() {
   renderizarResultados();
 }
 
+// --- Render de tarjetas --- //
 function renderizarResultados() {
   if (!els.results) return;
+
   els.results.innerHTML = "";
 
   rematesFiltrados.forEach((r) => {
     const card = document.createElement("article");
     card.className = "remate-card";
 
+    const tipoBien = r.tipo_bien || "Remate";
+    const deudor = r.deudor_nombre || "Deudor no indicado";
+    const region = r.region || "-";
+    const comuna = r.comuna || "-";
+    const direccion = r.direccion || "-";
+    const proc = r.tipo_procedimiento || r.procedimiento || "";
     const fechaPub = r.fecha_publicacion || "-";
-    const fechaRem = r.fecha_remate ? r.fecha_remate.slice(0, 16).replace("T", " ") : "Sin fecha";
+    const fechaRem = r.fecha_remate
+      ? r.fecha_remate.slice(0, 16).replace("T", " ")
+      : "Sin fecha remate";
+
     const valor = r.valor_minimo
-      ? `$${r.valor_minimo.toLocaleString("es-CL")}`
-      : "Sin mínimo";
+      ? `$${Number(r.valor_minimo).toLocaleString("es-CL")}`
+      : "Sin mínimo publicado";
+
+    const descripcion =
+      r.descripcion || r.tipo_bienes || "(sin descripción disponible)";
+
+    const urlPdf = r.fuente_url || "#";
 
     card.innerHTML = `
       <header class="remate-card__header">
-        <h3>${r.tipo_bien || "Remate"} – ${r.deudor_nombre || "Deudor no indicado"}</h3>
-        <span class="remate-card__tag">${r.tipo_procedimiento || ""}</span>
+        <h3>${tipoBien} – ${deudor}</h3>
+        ${
+          proc
+            ? `<span class="remate-card__tag">${proc}</span>`
+            : ""
+        }
       </header>
+
       <p class="remate-card__meta">
         <strong>Publicación:</strong> ${fechaPub} |
         <strong>Remate:</strong> ${fechaRem}
       </p>
       <p class="remate-card__meta">
-        <strong>Ubicación:</strong> ${r.region || "-"} / ${r.comuna || "-"}<br>
-        <strong>Dirección:</strong> ${r.direccion || "-"}
+        <strong>Ubicación:</strong> ${region} / ${comuna}<br>
+        <strong>Dirección:</strong> ${direccion}
       </p>
       <p class="remate-card__meta">
         <strong>Valor mínimo:</strong> ${valor}
       </p>
       <p class="remate-card__desc">
-        ${r.descripcion || "(sin descripción disponible)"}
+        ${descripcion}
       </p>
       <footer class="remate-card__footer">
-        <a class="btn-pdf" href="${r.fuente_url}" target="_blank" rel="noopener noreferrer">
+        <a class="btn-pdf" href="${urlPdf}" target="_blank" rel="noopener noreferrer">
           Ver PDF en Boletín Concursal
         </a>
       </footer>
@@ -153,6 +190,7 @@ function renderizarResultados() {
   }
 }
 
+// --- Inicialización --- //
 document.addEventListener("DOMContentLoaded", () => {
   if (els.aplicar) {
     els.aplicar.addEventListener("click", aplicarFiltros);
