@@ -1,0 +1,39 @@
+name: Deploy Rematierras to GitHub Pages
+
+on:
+  push:
+    branches: [ "main" ]       # se ejecuta con cada push a main
+  workflow_dispatch:            # y también lo puedes correr a mano desde Actions
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # sube TODO el sitio (index.html, app.js, carpeta data, etc.)
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./   # raíz del repo
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
