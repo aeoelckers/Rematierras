@@ -15,7 +15,6 @@ const elements = {
   lastUpdate: document.getElementById("last-update"),
 };
 
-// 👇 ESTA es la parte clave: lee SOLO el JSON local
 async function cargarDatos() {
   try {
     const res = await fetch("data/remates.json");
@@ -25,15 +24,8 @@ async function cargarDatos() {
 
     poblarFiltros();
     renderizarResultados();
-    elements.lastUpdate.textContent = "Datos cargados desde data/remates.json";
+    elements.lastUpdate.textContent = "Datos cargados desde data/remates.json (Boletín Concursal).";
   } catch (err) {
     console.error(err);
     elements.error.style.display = "block";
-    elements.error.textContent =
-      "No se pudo cargar data/remates.json. Revisa que exista y tenga formato JSON válido.";
-  }
-}
-
-// … (de aquí hacia abajo dejas todo tu código de filtros y render tal como lo tenías)
-elements.btnAplicar.addEventListener("click", () => aplicarFiltros());
-cargarDatos();
+    elements.er
