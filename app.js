@@ -9,7 +9,6 @@ const els = {
   results: document.getElementById("results"),
   resultCount: document.getElementById("result-count"),
   error: document.getElementById("error"),
-  loading: document.getElementById("loading"),
   lastUpdate: document.getElementById("last-update"),
 };
 
@@ -19,7 +18,6 @@ let rematesFiltrados = [];
 // --- Cargar datos desde data/remates.json --- //
 async function cargarDatos() {
   try {
-    mostrarCarga(true);
     const res = await fetch("data/remates.json");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -50,12 +48,8 @@ async function cargarDatos() {
       els.error.style.display = "block";
       els.error.textContent =
         "No se pudo cargar data/remates.json. Verifica que exista y tenga formato correcto.";
-      els.error.innerHTML = `No se pudo cargar data/remates.json (${err.message}).<br>
-        Si abriste el archivo directamente (file://), inicia un servidor local, por ejemplo:<br>
-        <code>python -m http.server 8000</code>`;
     }
   }
-  mostrarCarga(false);
 }
 
 // --- Poblar selects de tipo, región, comuna --- //
@@ -81,7 +75,33 @@ function poblarFiltros() {
     Array.from(values)
       .sort((a, b) => a.localeCompare(b, "es-CL"))
       .forEach((v) => {
-@@ -105,50 +109,58 @@ function aplicarFiltros() {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        select.appendChild(opt);
+      });
+  };
+
+  fillSelect(els.tipoRemate, tipos, "Todos los tipos");
+  fillSelect(els.region, regiones, "Todas las regiones");
+  fillSelect(els.comuna, comunas, "Todas las comunas");
+}
+
+// --- Aplicar filtros --- //
+function aplicarFiltros() {
+  const tipo = els.tipoRemate?.value || "";
+  const region = els.region?.value || "";
+  const comuna = els.comuna?.value || "";
+  const desde = els.fechaDesde?.value || ""; // formato YYYY-MM-DD
+  const hasta = els.fechaHasta?.value || "";
+
+  rematesFiltrados = remates.filter((r) => {
+    if (tipo && r.tipo_bien !== tipo) return false;
+    if (region && r.region !== region) return false;
+    if (comuna && r.comuna !== comuna) return false;
+
+    // fecha_remate (ISO) o fecha_publicacion (YYYY-MM-DD)
+    let fechaBase = r.fecha_remate || r.fecha_publicacion;
     if (!fechaBase) return true;
 
     // Normalizamos a string ISO comparable
@@ -106,14 +126,6 @@ function renderizarResultados() {
   if (!els.results) return;
 
   els.results.innerHTML = "";
-
-  if (rematesFiltrados.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent =
-      "No hay remates que coincidan con estos filtros. Intenta limpiar o cambiar los criterios.";
-    els.results.appendChild(empty);
-  }
 
   rematesFiltrados.forEach((r) => {
     const card = document.createElement("article");
@@ -140,7 +152,19 @@ function renderizarResultados() {
     const urlPdf = r.fuente_url || "#";
 
     card.innerHTML = `
-@@ -168,32 +180,37 @@ function renderizarResultados() {
+      <header class="remate-card__header">
+        <h3>${tipoBien} – ${deudor}</h3>
+        ${
+          proc
+            ? `<span class="remate-card__tag">${proc}</span>`
+            : ""
+        }
+      </header>
+
+      <p class="remate-card__meta">
+        <strong>Publicación:</strong> ${fechaPub} |
+        <strong>Remate:</strong> ${fechaRem}
+      </p>
       <p class="remate-card__meta">
         <strong>Ubicación:</strong> ${region} / ${comuna}<br>
         <strong>Dirección:</strong> ${direccion}
@@ -164,11 +188,6 @@ function renderizarResultados() {
   if (els.resultCount) {
     els.resultCount.textContent = `${rematesFiltrados.length} remates encontrados`;
   }
-}
-
-function mostrarCarga(activo) {
-  if (!els.loading) return;
-  els.loading.style.display = activo ? "block" : "none";
 }
 
 // --- Inicialización --- //
