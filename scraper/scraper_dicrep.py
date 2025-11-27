@@ -1,64 +1,85 @@
 import json
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-import hashlib
 
-URL = "https://www.dicrep.cl/remates"
+BASE = "https://licitaciones.bienes.cl"
+LIST_URL = BASE + "/licitaciones/licitaciones-actuales/"
 
-def get_html(url):
-    r = requests.get(url, timeout=10)
+headers = {
+    "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
+    "Referer": "https://www.google.com/",
+}
+
+def scrape_bienes():
+    r = requests.get(LIST_URL, headers=headers, timeout=15)
     r.raise_for_status()
-    return BeautifulSoup(r.text, "html.parser")
 
-def extract_remates():
-    soup = get_html(URL)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-    remates = []
-    blocks = soup.select(".remate-item")  # depende de la clase real; la ajustamos si la página cambia
+    cards = soup.select("div.card")
 
-    for b in blocks:
-        titulo = b.select_one("h3").get_text(strip=True)
-        link = b.select_one("a")["href"]
-        fecha_texto = b.select_one(".fecha").get_text(strip=True) if b.select_one(".fecha") else ""
+    data = []
+    for i, card in enumerate(cards, start=1):
+        title_el = card.find("h3") or card.find("h2")
+        titulo = title_el.get_text(strip=True) if title_el else "Licitación Bienes Nacionales"
 
-        # convertir fecha estimada
-        try:
-            fecha = datetime.strptime(fecha_texto, "%d/%m/%Y").strftime("%Y-%m-%d")
-        except:
-            fecha = None
+        body = card.find("div", class_="card-body") or card
 
-        detalle = get_html(link)
-        texto_aviso = detalle.get_text(" ", strip=True).lower()
+        texto = body.get_text("\n", strip=True)
+        lineas = [l.strip() for l in texto.splitlines()]
 
-        palabras = ["terreno", "lote", "sitio", "parcela", "campo"]
-        if not any(p in texto_aviso for p in palabras):
-            continue  # solo terrenos
+        def busca(prefix):
+            for l in lineas:
+                if l.startswith(prefix):
+                    return l.replace(prefix, "").strip()
+            return ""
 
-        remate = {
-            "id": hashlib.md5((titulo + fecha_texto).encode()).hexdigest()[:10],
-            "tipo_remate": "Dicrep",
-            "tipo_inmueble": "Terreno",
-            "region": None,
-            "comuna": None,
-            "fecha_remate": fecha,
+        region = busca("Región:")
+        prov_comuna = busca("Provincia y comuna:")
+        superficie = busca("Superficie:")
+
+        estado = "Vigente"
+        badge = card.find("span", string=lambda t: t and isinstance(t, str) and t.strip())
+        if badge and "suspendida" in badge.text.lower():
+            estado = "Suspendida"
+
+        btn = card.find("a", string=lambda t: t and "Ver licitación" in t)
+        if btn and btn.get("href"):
+            href = btn["href"]
+            if href.startswith("/"):
+                url = BASE + href
+            else:
+                url = href
+        else:
+            url = LIST_URL
+
+        item = {
+            "id": f"bienes-{i}",
+            "tipo_remate": f"Bienes Nacionales ({estado})",
+            "tipo_inmueble": titulo,
+            "region": region,
+            "comuna": prov_comuna,
+            "fecha_remate": None,
             "precio_minimo": None,
             "moneda": "",
-            "source": "dicrep",
-            "source_url": link,
+            "source": "bienes_nacionales",
+            "source_url": url,
+            "superficie": superficie,
         }
+        data.append(item)
 
-        remates.append(remate)
+    return data
 
-    return remates
-
-
-def save_json():
-    datos = extract_remates()
-    with open("../data/remates_dicrep.json", "w", encoding="utf-8") as f:
-        json.dump(datos, f, indent=2, ensure_ascii=False)
-    print(f"Guardados {len(datos)} remates desde DICREP.")
-
+def main():
+    datos = scrape_bienes()
+    with open("data/remates.json", "w", encoding="utf-8") as f:
+        json.dump(datos, f, ensure_ascii=False, indent=2)
+    print(f"Guardadas {len(datos)} licitaciones en data/remates.json")
 
 if __name__ == "__main__":
-    save_json()
+    main()
