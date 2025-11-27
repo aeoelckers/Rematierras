@@ -1,0 +1,54 @@
+name: Actualizar remates Boletín Concursal
+
+on:
+  # Para poder lanzarlo a mano desde la pestaña "Actions"
+  workflow_dispatch:
+
+  # Para que corra todos los días a las 06:00 UTC
+  # (en Chile suele ser 03:00 o 02:00 aprox, según horario)
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+
+    # Necesario para que el Action pueda hacer commit en el repo
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Boletín Concursal scraper
+        run: |
+          # Puedes ajustar los días de lookback si quieres menos/más
+          python -m backend.remates_scraper.main \
+            --output data/remates.json \
+            --lookback-days 90
+
+      - name: Commit and push changes (if any)
+        run: |
+          # Si no hay cambios, salimos sin hacer commit
+          if git diff --quiet; then
+            echo "No hay cambios en data/remates.json"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/remates.json
+          git commit -m "chore: update remates.json (Boletín Concursal)"
+          git push
