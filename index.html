@@ -6,6 +6,56 @@
   border: 1px solid #1f2937;
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.4);
 }
+
+.remate-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.remate-card__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #e5e7eb;
+}
+
+.remate-card__tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #a5b4fc;
+  font-size: 0.75rem;
+  border: 1px solid #4f46e5;
+}
+
+.remate-card__meta {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.remate-card__desc {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #d1d5db;
+}
+
+.remate-card__footer {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-pdf {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #022c22;
+  font-size: 0.8rem;
+  text-decoration: none;
+  font-weight: 600;
+}
 <!DOCTYPE html>
 <html lang="es">
   <head>
@@ -14,6 +64,245 @@
     <title>Rematierras – Buscador de remates</title>
     <link rel="icon" type="image/svg+xml" href="logo-r.svg" />
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Hoja de estilo embebida para evitar que la página se vea sin formato
+         cuando el CSS externo no carga (por ejemplo, al abrir file://). */
+      :root {
+        color-scheme: dark;
+        --bg: #0b1021;
+        --panel: #0f172a;
+        --muted: #9ca3af;
+        --accent: #22c55e;
+        --accent-strong: #16a34a;
+        --border: #1f2937;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at 20% 20%, #0b132f, #0a0f1e 40%),
+          radial-gradient(circle at 80% 0%, #111827, #0a0f1e 35%),
+          var(--bg);
+        color: #e5e7eb;
+        min-height: 100vh;
+      }
+
+      header.hero {
+        padding: 28px 20px 10px;
+        text-align: center;
+      }
+
+      .hero__heading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+      }
+
+      .hero__logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid rgba(34, 197, 94, 0.45);
+        box-shadow: 0 10px 25px rgba(34, 197, 94, 0.16);
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba(34, 197, 94, 0.25),
+          transparent 55%
+        );
+      }
+
+      .hero h1 {
+        margin: 0 0 8px;
+        font-weight: 700;
+        font-size: 1.8rem;
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 20px 32px;
+      }
+
+      .panel {
+        background: #0a1024;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 16px 12px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        color: #cbd5e1;
+      }
+
+      select,
+      input[type="date"] {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: #e5e7eb;
+      }
+
+      .filters__footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 16px;
+        justify-content: space-between;
+        margin-top: 6px;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #022c22;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-strong);
+      }
+
+      .info {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      #error {
+        display: none;
+        margin: 12px 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #7f1d1d;
+        background: #3f0f0f;
+        color: #fecaca;
+      }
+
+      #loading {
+        margin: 16px 0 4px;
+        color: var(--muted);
+      }
+
+      #results {
+        margin-top: 18px;
+      }
+
+      .empty-state {
+        padding: 14px 16px;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        color: var(--muted);
+        background: #0d1227;
+        text-align: center;
+      }
+
+      .remate-card {
+        background: #020617;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        border: 1px solid #1f2937;
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.4);
+      }
+
+      .remate-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .remate-card__header h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: #e5e7eb;
+      }
+
+      .remate-card__tag {
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #0f172a;
+        color: #a5b4fc;
+        font-size: 0.75rem;
+        border: 1px solid #4f46e5;
+      }
+
+      .remate-card__meta {
+        margin: 4px 0;
+        font-size: 0.85rem;
+        color: #9ca3af;
+      }
+
+      .remate-card__desc {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: #d1d5db;
+      }
+
+      .remate-card__footer {
+        margin-top: 10px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .btn-pdf {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #22c55e;
+        color: #022c22;
+        font-size: 0.8rem;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      @media (max-width: 640px) {
+        .remate-card__header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 6px;
+        }
+
+        .actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+      }
+    </style>
   </head>
   <body>
     <header class="hero">
@@ -26,12 +315,6 @@
       </div>
     </header>
 
-.remate-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
     <main>
       <section class="panel">
         <div class="filters">
@@ -57,11 +340,6 @@
           </div>
         </div>
 
-.remate-card__header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #e5e7eb;
-}
         <div class="filters__footer">
           <div class="actions">
             <button id="btn-aplicar" class="btn btn-primary">Aplicar filtros</button>
@@ -73,21 +351,8 @@
         </div>
       </section>
 
-.remate-card__tag {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #0f172a;
-  color: #a5b4fc;
-  font-size: 0.75rem;
-  border: 1px solid #4f46e5;
-}
       <div id="error"></div>
 
-.remate-card__meta {
-  margin: 4px 0;
-  font-size: 0.85rem;
-  color: #9ca3af;
-}
       <p id="loading">Cargando remates…</p>
       <section id="results" aria-live="polite"></section>
       <noscript>
@@ -97,27 +362,6 @@
       </noscript>
     </main>
 
-.remate-card__desc {
-  margin-top: 8px;
-  font-size: 0.85rem;
-  color: #d1d5db;
-}
-
-.remate-card__footer {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-pdf {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #22c55e;
-  color: #022c22;
-  font-size: 0.8rem;
-  text-decoration: none;
-  font-weight: 600;
-}
     <script src="app.js" defer></script>
   </body>
 </html>
