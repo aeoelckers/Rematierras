@@ -1,58 +1,64 @@
-.remate-card {
-  background: #020617;
-  border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 12px;
-  border: 1px solid #1f2937;
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.4);
-}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rematierras – Buscador de remates</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>Buscador de remates concursales</h1>
+      <p>Filtra por tipo, región, comuna o rango de fechas de remate.</p>
+    </header>
 
-.remate-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
+    <main>
+      <section class="panel">
+        <div class="filters">
+          <div>
+            <label for="tipo-remate">Tipo de remate</label>
+            <select id="tipo-remate"></select>
+          </div>
+          <div>
+            <label for="region">Región</label>
+            <select id="region"></select>
+          </div>
+          <div>
+            <label for="comuna">Comuna</label>
+            <select id="comuna"></select>
+          </div>
+          <div>
+            <label for="fecha-desde">Fecha remate desde</label>
+            <input id="fecha-desde" type="date" />
+          </div>
+          <div>
+            <label for="fecha-hasta">Fecha remate hasta</label>
+            <input id="fecha-hasta" type="date" />
+          </div>
+        </div>
 
-.remate-card__header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #e5e7eb;
-}
+        <div class="filters__footer">
+          <div class="actions">
+            <button id="btn-aplicar" class="btn btn-primary">Aplicar filtros</button>
+          </div>
+          <div class="info">
+            <span id="result-count"></span>
+            <span id="last-update" style="margin-left: 12px"></span>
+          </div>
+        </div>
+      </section>
 
-.remate-card__tag {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #0f172a;
-  color: #a5b4fc;
-  font-size: 0.75rem;
-  border: 1px solid #4f46e5;
-}
+      <div id="error"></div>
 
-.remate-card__meta {
-  margin: 4px 0;
-  font-size: 0.85rem;
-  color: #9ca3af;
-}
+      <p id="loading">Cargando remates…</p>
+      <section id="results" aria-live="polite"></section>
+      <noscript>
+        <p style="color: #fecaca; background:#3f0f0f; padding:10px; border-radius:10px;">
+          Esta página necesita JavaScript para mostrar los remates.
+        </p>
+      </noscript>
+    </main>
 
-.remate-card__desc {
-  margin-top: 8px;
-  font-size: 0.85rem;
-  color: #d1d5db;
-}
-
-.remate-card__footer {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-pdf {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #22c55e;
-  color: #022c22;
-  font-size: 0.8rem;
-  text-decoration: none;
-  font-weight: 600;
-}
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -9,6 +9,7 @@ const els = {
   results: document.getElementById("results"),
   resultCount: document.getElementById("result-count"),
   error: document.getElementById("error"),
+  loading: document.getElementById("loading"),
   lastUpdate: document.getElementById("last-update"),
 };
 
@@ -18,6 +19,7 @@ let rematesFiltrados = [];
 // --- Cargar datos desde data/remates.json --- //
 async function cargarDatos() {
   try {
+    mostrarCarga(true);
     const res = await fetch("data/remates.json");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -50,6 +52,7 @@ async function cargarDatos() {
         "No se pudo cargar data/remates.json. Verifica que exista y tenga formato correcto.";
     }
   }
+  mostrarCarga(false);
 }
 
 // --- Poblar selects de tipo, región, comuna --- //
@@ -188,6 +191,11 @@ function renderizarResultados() {
   if (els.resultCount) {
     els.resultCount.textContent = `${rematesFiltrados.length} remates encontrados`;
   }
+}
+
+function mostrarCarga(activo) {
+  if (!els.loading) return;
+  els.loading.style.display = activo ? "block" : "none";
 }
 
 // --- Inicialización --- //
