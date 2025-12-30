@@ -209,7 +209,13 @@ function renderizarResultados() {
         ${descripcion}
       </p>
       <footer class="remate-card__footer">
-        <a class="btn-pdf" href="${urlPdf}" target="_blank" rel="noopener noreferrer">
+        <a
+          class="btn-pdf"
+          href="${urlPdf}"
+          data-url="${urlPdf}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Ver PDF en Boletín Concursal
         </a>
       </footer>
@@ -227,6 +233,43 @@ function renderizarResultados() {
 document.addEventListener("DOMContentLoaded", () => {
   if (els.aplicar) {
     els.aplicar.addEventListener("click", aplicarFiltros);
+  }
+  if (els.results) {
+    els.results.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const link = target.closest(".btn-pdf");
+      if (!link) return;
+      const url = link.getAttribute("data-url");
+      if (!url || url === "#") return;
+
+      event.preventDefault();
+
+      const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          if (popup) {
+            popup.location.href = blobUrl;
+          } else {
+            window.open(blobUrl, "_blank", "noopener,noreferrer");
+          }
+        })
+        .catch(() => {
+          if (popup) {
+            popup.location.href = url;
+          } else {
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
+        });
+    });
   }
   cargarDatos();
 });
