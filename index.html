@@ -195,6 +195,71 @@
         font-weight: 600;
       }
 
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 1000;
+      }
+
+      .modal.is-open {
+        display: flex;
+      }
+
+      .modal__content {
+        background: #0a1024;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        max-width: 720px;
+        width: 100%;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+        position: relative;
+      }
+
+      .modal__title {
+        margin: 0 0 12px;
+        font-size: 1.2rem;
+      }
+
+      .modal__close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: #e5e7eb;
+        border-radius: 999px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+
+      .modal__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px 16px;
+        font-size: 0.9rem;
+        color: #d1d5db;
+      }
+
+      .modal__label {
+        color: #9ca3af;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .modal__block {
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: #e5e7eb;
+        line-height: 1.4;
+      }
+
       @media (max-width: 640px) {
         .remate-card__header {
           flex-direction: column;
@@ -263,6 +328,15 @@
 
       <section id="results" aria-live="polite"></section>
     </main>
+
+    <div id="modal-remate" class="modal" aria-hidden="true">
+      <div class="modal__content" role="dialog" aria-modal="true">
+        <button class="modal__close" type="button">Cerrar</button>
+        <h2 class="modal__title" id="modal-titulo">Detalle del remate</h2>
+        <div class="modal__grid" id="modal-info"></div>
+        <div class="modal__block" id="modal-descripcion"></div>
+      </div>
+    </div>
 
     <script src="app.js"></script>
   </body>

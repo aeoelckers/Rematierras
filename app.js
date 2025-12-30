@@ -11,6 +11,10 @@ const els = {
   resultCount: document.getElementById("result-count"),
   error: document.getElementById("error"),
   lastUpdate: document.getElementById("last-update"),
+  modal: document.getElementById("modal-remate"),
+  modalTitle: document.getElementById("modal-titulo"),
+  modalInfo: document.getElementById("modal-info"),
+  modalDescripcion: document.getElementById("modal-descripcion"),
 };
 
 let remates = [];
@@ -160,7 +164,7 @@ function renderizarResultados() {
 
   els.results.innerHTML = "";
 
-  rematesFiltrados.forEach((r) => {
+  rematesFiltrados.forEach((r, index) => {
     const card = document.createElement("article");
     card.className = "remate-card";
 
@@ -211,12 +215,11 @@ function renderizarResultados() {
       <footer class="remate-card__footer">
         <a
           class="btn-pdf"
-          href="${urlPdf}"
-          data-url="${urlPdf}"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="#"
+          data-index="${index}"
+          role="button"
         >
-          Ver PDF en Boletín Concursal
+          Ver detalle del remate
         </a>
       </footer>
     `;
@@ -227,6 +230,59 @@ function renderizarResultados() {
   if (els.resultCount) {
     els.resultCount.textContent = `${rematesFiltrados.length} remates encontrados`;
   }
+}
+
+function abrirModalRemate(remate) {
+  if (!els.modal || !els.modalTitle || !els.modalInfo || !els.modalDescripcion) {
+    return;
+  }
+
+  const tipoBien = remate.tipo_bien || "Remate";
+  const deudor = remate.deudor_nombre || "Deudor no indicado";
+  els.modalTitle.textContent = `${tipoBien} – ${deudor}`;
+
+  const campos = [
+    { label: "Publicación", value: remate.fecha_publicacion },
+    { label: "Remate", value: remate.fecha_remate },
+    { label: "Tipo procedimiento", value: remate.tipo_procedimiento },
+    { label: "Procedimiento", value: remate.procedimiento },
+    { label: "Rol causa", value: remate.rol_causa },
+    { label: "Tribunal", value: remate.tribunal },
+    { label: "Región", value: remate.region },
+    { label: "Comuna", value: remate.comuna },
+    { label: "Dirección", value: remate.direccion },
+    { label: "Valor mínimo", value: remate.valor_minimo },
+    { label: "Comisión", value: remate.comision },
+    { label: "Liquidador", value: remate.liquidador },
+    { label: "Ente publicador", value: remate.ente_publicador },
+    { label: "Código validación", value: remate.codigo_validacion },
+    { label: "Fuente PDF", value: remate.fuente_url },
+  ];
+
+  els.modalInfo.innerHTML = campos
+    .filter((item) => item.value)
+    .map(
+      (item) => `
+        <div>
+          <div class="modal__label">${item.label}</div>
+          <div>${item.value}</div>
+        </div>
+      `
+    )
+    .join("");
+
+  const descripcion =
+    remate.descripcion || remate.tipo_bienes || "Sin descripción disponible.";
+  els.modalDescripcion.textContent = descripcion;
+
+  els.modal.classList.add("is-open");
+  els.modal.setAttribute("aria-hidden", "false");
+}
+
+function cerrarModalRemate() {
+  if (!els.modal) return;
+  els.modal.classList.remove("is-open");
+  els.modal.setAttribute("aria-hidden", "true");
 }
 
 // --- Inicialización --- //
@@ -240,36 +296,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!(target instanceof HTMLElement)) return;
       const link = target.closest(".btn-pdf");
       if (!link) return;
-      const url = link.getAttribute("data-url");
-      if (!url || url === "#") return;
+      const index = Number(link.getAttribute("data-index"));
+      const remate = rematesFiltrados[index];
+      if (!remate) return;
 
       event.preventDefault();
-
-      const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
-
-      fetch(url)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-          return response.blob();
-        })
-        .then((blob) => {
-          const blobUrl = URL.createObjectURL(blob);
-          if (popup) {
-            popup.location.href = blobUrl;
-          } else {
-            window.open(blobUrl, "_blank", "noopener,noreferrer");
-          }
-        })
-        .catch(() => {
-          if (popup) {
-            popup.location.href = url;
-          } else {
-            window.open(url, "_blank", "noopener,noreferrer");
-          }
-        });
+      abrirModalRemate(remate);
     });
+  }
+  if (els.modal) {
+    els.modal.addEventListener("click", (event) => {
+      if (event.target === els.modal) {
+        cerrarModalRemate();
+      }
+    });
+    const closeBtn = els.modal.querySelector(".modal__close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", cerrarModalRemate);
+    }
   }
   cargarDatos();
 });
