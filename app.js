@@ -5,11 +5,16 @@ const els = {
   comuna: document.getElementById("comuna"),
   fechaDesde: document.getElementById("fecha-desde"),
   fechaHasta: document.getElementById("fecha-hasta"),
+  busqueda: document.getElementById("busqueda-palabras"),
   aplicar: document.getElementById("btn-aplicar"),
   results: document.getElementById("results"),
   resultCount: document.getElementById("result-count"),
   error: document.getElementById("error"),
   lastUpdate: document.getElementById("last-update"),
+  modal: document.getElementById("modal-remate"),
+  modalTitle: document.getElementById("modal-titulo"),
+  modalInfo: document.getElementById("modal-info"),
+  modalDescripcion: document.getElementById("modal-descripcion"),
 };
 
 let remates = [];
@@ -94,6 +99,12 @@ function aplicarFiltros() {
   const comuna = els.comuna?.value || "";
   const desde = els.fechaDesde?.value || ""; // formato YYYY-MM-DD
   const hasta = els.fechaHasta?.value || "";
+  const busqueda = els.busqueda?.value || "";
+  const palabras = busqueda
+    .toLowerCase()
+    .split(/\s+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   rematesFiltrados = remates.filter((r) => {
     if (tipo && r.tipo_bien !== tipo) return false;
@@ -115,6 +126,32 @@ function aplicarFiltros() {
     if (desde && fechaBase < `${desde}T00:00:00`) return false;
     if (hasta && fechaBase > `${hasta}T23:59:59`) return false;
 
+    if (palabras.length > 0) {
+      const texto =
+        [
+          r.tipo_bien,
+          r.deudor_nombre,
+          r.region,
+          r.comuna,
+          r.direccion,
+          r.tipo_procedimiento,
+          r.procedimiento,
+          r.fecha_publicacion,
+          r.fecha_remate,
+          r.valor_minimo,
+          r.descripcion,
+          r.tipo_bienes,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+      const todasIncluidas = palabras.every((palabra) =>
+        texto.includes(palabra)
+      );
+      if (!todasIncluidas) return false;
+    }
+
     return true;
   });
 
@@ -127,7 +164,7 @@ function renderizarResultados() {
 
   els.results.innerHTML = "";
 
-  rematesFiltrados.forEach((r) => {
+  rematesFiltrados.forEach((r, index) => {
     const card = document.createElement("article");
     card.className = "remate-card";
 
@@ -176,8 +213,13 @@ function renderizarResultados() {
         ${descripcion}
       </p>
       <footer class="remate-card__footer">
-        <a class="btn-pdf" href="${urlPdf}" target="_blank" rel="noopener noreferrer">
-          Ver PDF en Boletín Concursal
+        <a
+          class="btn-pdf"
+          href="#"
+          data-index="${index}"
+          role="button"
+        >
+          Ver detalle del remate
         </a>
       </footer>
     `;
@@ -190,10 +232,88 @@ function renderizarResultados() {
   }
 }
 
+function abrirModalRemate(remate) {
+  if (!els.modal || !els.modalTitle || !els.modalInfo || !els.modalDescripcion) {
+    return;
+  }
+
+  const tipoBien = remate.tipo_bien || "Remate";
+  const deudor = remate.deudor_nombre || "Deudor no indicado";
+  els.modalTitle.textContent = `${tipoBien} – ${deudor}`;
+
+  const campos = [
+    { label: "Publicación", value: remate.fecha_publicacion },
+    { label: "Remate", value: remate.fecha_remate },
+    { label: "Tipo procedimiento", value: remate.tipo_procedimiento },
+    { label: "Procedimiento", value: remate.procedimiento },
+    { label: "Rol causa", value: remate.rol_causa },
+    { label: "Tribunal", value: remate.tribunal },
+    { label: "Región", value: remate.region },
+    { label: "Comuna", value: remate.comuna },
+    { label: "Dirección", value: remate.direccion },
+    { label: "Valor mínimo", value: remate.valor_minimo },
+    { label: "Comisión", value: remate.comision },
+    { label: "Liquidador", value: remate.liquidador },
+    { label: "Ente publicador", value: remate.ente_publicador },
+    { label: "Código validación", value: remate.codigo_validacion },
+    { label: "Fuente PDF", value: remate.fuente_url },
+  ];
+
+  els.modalInfo.innerHTML = campos
+    .filter((item) => item.value)
+    .map(
+      (item) => `
+        <div>
+          <div class="modal__label">${item.label}</div>
+          <div>${item.value}</div>
+        </div>
+      `
+    )
+    .join("");
+
+  const descripcion =
+    remate.descripcion || remate.tipo_bienes || "Sin descripción disponible.";
+  els.modalDescripcion.textContent = descripcion;
+
+  els.modal.classList.add("is-open");
+  els.modal.setAttribute("aria-hidden", "false");
+}
+
+function cerrarModalRemate() {
+  if (!els.modal) return;
+  els.modal.classList.remove("is-open");
+  els.modal.setAttribute("aria-hidden", "true");
+}
+
 // --- Inicialización --- //
 document.addEventListener("DOMContentLoaded", () => {
   if (els.aplicar) {
     els.aplicar.addEventListener("click", aplicarFiltros);
+  }
+  if (els.results) {
+    els.results.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const link = target.closest(".btn-pdf");
+      if (!link) return;
+      const index = Number(link.getAttribute("data-index"));
+      const remate = rematesFiltrados[index];
+      if (!remate) return;
+
+      event.preventDefault();
+      abrirModalRemate(remate);
+    });
+  }
+  if (els.modal) {
+    els.modal.addEventListener("click", (event) => {
+      if (event.target === els.modal) {
+        cerrarModalRemate();
+      }
+    });
+    const closeBtn = els.modal.querySelector(".modal__close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", cerrarModalRemate);
+    }
   }
   cargarDatos();
 });
