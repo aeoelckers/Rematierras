@@ -5,6 +5,7 @@ const els = {
   comuna: document.getElementById("comuna"),
   fechaDesde: document.getElementById("fecha-desde"),
   fechaHasta: document.getElementById("fecha-hasta"),
+  busqueda: document.getElementById("busqueda-palabras"),
   aplicar: document.getElementById("btn-aplicar"),
   results: document.getElementById("results"),
   resultCount: document.getElementById("result-count"),
@@ -94,6 +95,12 @@ function aplicarFiltros() {
   const comuna = els.comuna?.value || "";
   const desde = els.fechaDesde?.value || ""; // formato YYYY-MM-DD
   const hasta = els.fechaHasta?.value || "";
+  const busqueda = els.busqueda?.value || "";
+  const palabras = busqueda
+    .toLowerCase()
+    .split(/\s+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   rematesFiltrados = remates.filter((r) => {
     if (tipo && r.tipo_bien !== tipo) return false;
@@ -114,6 +121,32 @@ function aplicarFiltros() {
 
     if (desde && fechaBase < `${desde}T00:00:00`) return false;
     if (hasta && fechaBase > `${hasta}T23:59:59`) return false;
+
+    if (palabras.length > 0) {
+      const texto =
+        [
+          r.tipo_bien,
+          r.deudor_nombre,
+          r.region,
+          r.comuna,
+          r.direccion,
+          r.tipo_procedimiento,
+          r.procedimiento,
+          r.fecha_publicacion,
+          r.fecha_remate,
+          r.valor_minimo,
+          r.descripcion,
+          r.tipo_bienes,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+      const todasIncluidas = palabras.every((palabra) =>
+        texto.includes(palabra)
+      );
+      if (!todasIncluidas) return false;
+    }
 
     return true;
   });
