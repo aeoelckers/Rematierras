@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rematierras – Buscador de remates</title>
+    <link rel="icon" href="assets/brc-logo.svg" type="image/svg+xml" />
     <style>
       :root {
         color-scheme: dark;
@@ -32,6 +33,18 @@
       header.hero {
         padding: 28px 20px 10px;
         text-align: center;
+      }
+
+      .hero__branding {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .hero__logo {
+        width: 48px;
+        height: 48px;
       }
 
       .hero h1 {
@@ -276,6 +289,14 @@
   </head>
   <body>
     <header class="hero">
+      <div class="hero__branding">
+        <img
+          class="hero__logo"
+          src="assets/brc-logo.svg"
+          alt="Logo BRC"
+        />
+        <strong>BRC</strong>
+      </div>
       <h1>Buscador de remates concursales</h1>
       <p>Filtra por tipo, región, comuna o rango de fechas de remate.</p>
     </header>
