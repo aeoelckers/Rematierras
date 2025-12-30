@@ -5,6 +5,7 @@ const els = {
   comuna: document.getElementById("comuna"),
   fechaDesde: document.getElementById("fecha-desde"),
   fechaHasta: document.getElementById("fecha-hasta"),
+  busqueda: document.getElementById("busqueda-palabras"),
   aplicar: document.getElementById("btn-aplicar"),
   results: document.getElementById("results"),
   resultCount: document.getElementById("result-count"),
@@ -94,6 +95,12 @@ function aplicarFiltros() {
   const comuna = els.comuna?.value || "";
   const desde = els.fechaDesde?.value || ""; // formato YYYY-MM-DD
   const hasta = els.fechaHasta?.value || "";
+  const busqueda = els.busqueda?.value || "";
+  const palabras = busqueda
+    .toLowerCase()
+    .split(/\s+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   rematesFiltrados = remates.filter((r) => {
     if (tipo && r.tipo_bien !== tipo) return false;
@@ -114,6 +121,32 @@ function aplicarFiltros() {
 
     if (desde && fechaBase < `${desde}T00:00:00`) return false;
     if (hasta && fechaBase > `${hasta}T23:59:59`) return false;
+
+    if (palabras.length > 0) {
+      const texto =
+        [
+          r.tipo_bien,
+          r.deudor_nombre,
+          r.region,
+          r.comuna,
+          r.direccion,
+          r.tipo_procedimiento,
+          r.procedimiento,
+          r.fecha_publicacion,
+          r.fecha_remate,
+          r.valor_minimo,
+          r.descripcion,
+          r.tipo_bienes,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+      const todasIncluidas = palabras.every((palabra) =>
+        texto.includes(palabra)
+      );
+      if (!todasIncluidas) return false;
+    }
 
     return true;
   });
@@ -176,7 +209,13 @@ function renderizarResultados() {
         ${descripcion}
       </p>
       <footer class="remate-card__footer">
-        <a class="btn-pdf" href="${urlPdf}" target="_blank" rel="noopener noreferrer">
+        <a
+          class="btn-pdf"
+          href="${urlPdf}"
+          data-url="${urlPdf}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Ver PDF en Boletín Concursal
         </a>
       </footer>
@@ -194,6 +233,43 @@ function renderizarResultados() {
 document.addEventListener("DOMContentLoaded", () => {
   if (els.aplicar) {
     els.aplicar.addEventListener("click", aplicarFiltros);
+  }
+  if (els.results) {
+    els.results.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const link = target.closest(".btn-pdf");
+      if (!link) return;
+      const url = link.getAttribute("data-url");
+      if (!url || url === "#") return;
+
+      event.preventDefault();
+
+      const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          if (popup) {
+            popup.location.href = blobUrl;
+          } else {
+            window.open(blobUrl, "_blank", "noopener,noreferrer");
+          }
+        })
+        .catch(() => {
+          if (popup) {
+            popup.location.href = url;
+          } else {
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
+        });
+    });
   }
   cargarDatos();
 });
